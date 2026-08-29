@@ -3,7 +3,7 @@
 # RDKit Molecular Descriptors and Correlation with logS
 # ============================================================
 
-!pip -q install datasets rdkit
+# !pip -q install datasets rdkit
 
 import re
 
