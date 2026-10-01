@@ -38,13 +38,22 @@ Before evaluating increasingly complex prediction methods, each dataset is exami
 
 These observations provide context for later model comparisons and help establish what information is already available from relatively simple molecular representations.
 
+The project then moves from dataset characterization into **controlled reproduction experiments**.
+
+Two MolVision tasks have currently been reproduced:
+
+- **ESOL-V regression** for aqueous-solubility prediction
+- **BBBP-V binary classification** for blood-brain barrier permeability prediction
+
+These reproduction experiments provide working baselines before introducing new representations, prompting strategies, evaluation procedures, or multimodal extensions.
+
 ---
 
-# Current Study: ESOL-V
+# ESOL-V Dataset Analysis
 
-The first dataset under investigation is **ESOL-V**, using an aqueous-solubility subset represented with SMILES.
+The first dataset examined in detail is **ESOL-V**, using an aqueous-solubility subset represented with SMILES.
 
-Current exploratory work includes:
+Exploratory work includes:
 
 - dataset structure inspection
 - duplicate-molecule analysis
@@ -70,7 +79,7 @@ Canonicalization revealed that the number of chemically unique molecules is slig
 
 This illustrates why molecular identity should be checked before treating every textual representation as an independent sample.
 
-The scaffold analysis also suggests a mixed structural distribution: many scaffold types appear only once, while a small number of structural categories account for a substantial portion of the molecules.
+The scaffold analysis also suggests a mixed structural distribution: many scaffold types appear only once, while a smaller number of structural categories account for a substantial portion of the molecules.
 
 ---
 
@@ -99,6 +108,70 @@ They provide a useful baseline question for subsequent experiments:
 
 ---
 
+# MolVision Reproduction Experiments
+
+The repository currently contains two full molecular-property prediction reproductions using the MolVision benchmark and Qwen-VL.
+
+## ESOL-V Regression
+
+The ESOL-V reproduction evaluates continuous aqueous-solubility prediction.
+
+| Component | Configuration |
+| --- | --- |
+| Dataset | `molvision/ESOL-V-SMILES-2` |
+| Model | `Qwen/Qwen-VL-Chat-Int4` |
+| Task | Regression |
+| Target | Aqueous solubility (`logS`) |
+| Samples | 220 |
+| Representation | SMILES |
+| In-context examples | 2 |
+| Sampling strategy | Scaffold |
+| Image input | No |
+
+Predictions are parsed from the model's **generated continuation only** and evaluated using:
+
+- Mean Absolute Error (MAE)
+- Root Mean Squared Error (RMSE)
+- R²
+- Pearson correlation
+
+Detailed methodology and code are available in [`esol-v/`](./esol-v/).
+
+---
+
+## BBBP-V Classification
+
+The BBBP-V reproduction evaluates binary blood-brain barrier permeability prediction.
+
+| Component | Configuration |
+| --- | --- |
+| Dataset | `molvision/BBBP-V-SMILES-2` |
+| Model | `Qwen/Qwen-VL-Chat-Int4` |
+| Task | Binary classification |
+| Samples | 410 |
+| Representation | SMILES |
+| In-context examples | 2 |
+| Sampling strategy | Scaffold |
+| Image input | No |
+
+Two prediction-parsing paths were compared:
+
+1. full decoded sequence
+2. generated continuation only
+
+### BBBP-V Results
+
+| Evaluation Path | Parsed | Parse Rate | Accuracy | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| Full sequence | 353 / 410 | 86.10% | 84.42% | 0.8980 |
+| Generated continuation only | 349 / 410 | 85.12% | 75.64% | 0.8604 |
+
+The substantial difference between these two evaluation paths motivates closer inspection of how autoregressive model outputs are parsed when computing molecular-property prediction metrics.
+
+Detailed methodology and code are available in [`bbbp-v/`](./bbbp-v/).
+
+---
+
 # Research Questions
 
 The questions in this repository are expected to evolve as the investigation develops.
@@ -115,49 +188,34 @@ Current directions include:
 
 5. When does combining representations produce meaningful gains rather than additional computational complexity?
 
+6. How sensitive are reported molecular-property prediction results to prompting and output-parsing methodology?
+
+7. Can reproduced MolVision baselines be extended into controlled experiments that isolate the contribution of molecular representation?
+
 ---
 
 # Repository Organization
 
-The repository will be organized incrementally as the research develops.
-
-Dataset-specific exploration will be kept under `analysis/`, while later experiments, models, and reusable code will be added when needed.
+The repository is organized by research stage.
 
 ```text
 molecular-property-prediction/
 │
 ├── README.md
+├── LICENSE
+├── .gitignore
 │
-└── analysis/
-    └── esol-v/
-```
-
-The root README serves as the **front page of the research project**.
-
-More detailed methodology, code, figures, results, and observations will live with the corresponding analysis or experiment.
-
----
-
-# Research Status
-
-### Current
-
-**ESOL-V dataset characterization and chemical-diversity analysis**
-
-### Next
-
-Prepare a controlled modeling dataset and establish simple predictive baselines before evaluating more complex molecular representations.
-
----
-
-# Reproducibility and Interpretation
-
-This is an **active research repository**.
-
-Results may be refined as analyses are expanded, errors are identified, or experimental assumptions change.
-
-Exploratory findings are labeled as such, and observations derived in this repository should not be interpreted as claims made by the original dataset authors unless explicitly cited.
-
----
-
-*This README will evolve with the research. The repository is intended to preserve both the progression of the investigation and the evidence supporting its conclusions.*
+├── analysis/
+│   ├── 01_esol_v_visual_inspection.py
+│   ├── 02_esol_v_molecule_audit.py
+│   ├── 03_esol_v_target_distribution.py
+│   ├── 04_esol_v_descriptor_analysis.py
+│   └── 05_esol_v_scaffold_analysis.py
+│
+├── esol-v/
+│   ├── README.md
+│   └── esol_v_evaluation.py
+│
+└── bbbp-v/
+    ├── README.md
+    └── bbbp_v_evaluation.py
